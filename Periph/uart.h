@@ -6,6 +6,8 @@
 #define uartRxBufferSize 16
 #define uartNum 2
 
+#define uartStopSymbol '\r'
+
 /**
  * @brief 串口接收缓冲区
  *

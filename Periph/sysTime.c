@@ -1,4 +1,4 @@
-// code = utf-8 
+// code = utf-8
 #include "sysTime.h"
 /**
  * @brief 全局计时 (ms)
@@ -12,7 +12,7 @@ volatile uint32_t sysTime;
  */
 void sysTimeInit(void)
 {
-    /*2us延迟时钟*/
+    /* 2us延迟时钟 */
     TIM_TimeBaseInitTypeDef initStruct_TIM;
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE); // 开启TIM4
     initStruct_TIM.TIM_Period = 1;                       // 设置周期为2
@@ -20,7 +20,7 @@ void sysTimeInit(void)
     initStruct_TIM.TIM_CounterMode = TIM_CounterMode_Up; // 设置为向上计数
     TIM_TimeBaseInit(TIM4, &initStruct_TIM);             // 写入对应寄存器
 
-    /*1ms通用时钟*/
+    /* 1ms通用时钟 */
     SysTick_Config(SystemCoreClock / 1000); // 配置SysTick为1ms产生一次中断
     NVIC_SetPriority(SysTick_IRQn, 1);      // 配置SysTick为最高中断优先
     sysTime = 0;                            // 清空计数器值
@@ -33,10 +33,10 @@ void sysTimeInit(void)
  */
 void delay1ms(uint32_t t)
 {
-    uint32_t delayStartTimestamp = sysTime, waitTime = t;
-    if (waitTime < 0xffffffff)
-        waitTime++;
-    while (sysTime - delayStartTimestamp < waitTime)
+    uint32_t delay1msStartTimestamp = sysTime, delayTime = t;
+    if (delayTime < 0xffffffff)
+        delayTime++;
+    while (sysTime - delay1msStartTimestamp < delayTime)
         ;
 }
 

@@ -36,6 +36,7 @@
 *._ii
 *.map
 
+
 # Debugger files
 *.ini
 
@@ -53,6 +54,7 @@
 *.sct
 *.sfd
 *.sfr
+*.lst
 
 # Misc
 *.tra

@@ -1,4 +1,4 @@
-// code = utf-8 
+// code = utf-8
 #include "uart.h"
 #include "stdio.h"
 /**
@@ -115,7 +115,7 @@ void USART1_IRQHandler(void)
     if (USART_GetITStatus(USART1, USART_IT_RXNE))
     {
         ch = USART_ReceiveData(USART1);
-        if (ch == '\r')
+        if (ch == (uint8_t)uartStopSymbol)
         {
             uartRxBuffer[0][uartRxBufferIdx[0]] = '\0';
             uartRxBufferIdx[0] = 0;
@@ -136,7 +136,7 @@ void USART2_IRQHandler(void)
     if (USART_GetITStatus(USART2, USART_IT_RXNE))
     {
         ch = USART_ReceiveData(USART1);
-        if (ch == '\r')
+        if (ch == (uint8_t)uartStopSymbol)
         {
             uartRxBuffer[1][uartRxBufferIdx[1]] = '\0';
             uartRxBufferIdx[1] = 0;

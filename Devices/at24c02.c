@@ -2,6 +2,14 @@
 #include "at24c02.h"
 #include "i2c.h"
 #include "sysTime.h"
+/**
+ * @brief AT24C02初始化
+ * 
+ */
+void at24c02_init(void)
+{
+    i2cInit();
+}
 
 /**
  * @brief 单字节写

@@ -1,10 +1,13 @@
-// code = utf-8 
+// code = utf-8
 
 #ifndef __r37_h
 #define __r37_h
 #include "stm32f10x_conf.h"
 
-
+/**
+ * @brief 旋转电位器DMA采集结果
+ *
+ */
 extern uint16_t r37_ADCVal[16];
 
 void r37Init(void);

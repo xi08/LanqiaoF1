@@ -1,6 +1,7 @@
 // code = utf-8
 
 #include "r37.h"
+
 uint16_t r37_ADCVal[16];
 
 /**
@@ -56,7 +57,7 @@ void r37DmaInit(void)
     ADC_StartCalibration(ADC1); // 开始ADC1自校准
     while (ADC_GetCalibrationStatus(ADC1))
         ;
-    ADC_SoftwareStartConvCmd(ADC1, ENABLE); // 开启ADC1转换
+    ADC_SoftwareStartConvCmd(ADC1, ENABLE); // 触发ADC1转换
 }
 
 /**
@@ -65,14 +66,46 @@ void r37DmaInit(void)
  */
 void r37Init(void)
 {
+    ADC_InitTypeDef initStruct_ADC;
+    GPIO_InitTypeDef initStruct_GPIO;
+
+    /* GPIO配置 */
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE); // 开启GPIOB时钟
+    initStruct_GPIO.GPIO_Pin = GPIO_Pin_0;                // 设置旋转电位器引脚
+    initStruct_GPIO.GPIO_Mode = GPIO_Mode_AIN;            // 设置引脚工作模式为模拟输入
+    GPIO_Init(GPIOB, &initStruct_GPIO);                   // 写入GPIOB设置
+
+    /* ADC配置 */
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);             // 开启ADC1时钟
+    RCC_ADCCLKConfig(RCC_PCLK2_Div6);                                // 设置工作频率为6分频 (@12MHz)
+    initStruct_ADC.ADC_Mode = ADC_Mode_Independent;                  // 设置为独立模式
+    initStruct_ADC.ADC_ScanConvMode = DISABLE;                       // 设置扫描模式为关
+    initStruct_ADC.ADC_ContinuousConvMode = ENABLE;                  // 设置为连续转换模式
+    initStruct_ADC.ADC_ExternalTrigConv = ADC_ExternalTrigConv_None; // 关闭外部触发
+    initStruct_ADC.ADC_DataAlign = ADC_DataAlign_Right;              // 设置为右对齐
+    initStruct_ADC.ADC_NbrOfChannel = 1;                             // 设置规则通道数
+    ADC_Init(ADC1, &initStruct_ADC);                                 // 写入ADC1设置
+
+    /* ADC通道配置 */
+    ADC_RegularChannelConfig(ADC1, ADC_Channel_8, 1, ADC_SampleTime_7Cycles5); //设置ADC1CH8采样周期为7.5
+
+    ADC_Cmd(ADC1, ENABLE); // 使能ADC1
+
+    /* ADC自校准 */
+    ADC_StartCalibration(ADC1);            // 触发ADC1自校准
+    while (ADC_GetCalibrationStatus(ADC1)) // 等待ADC1自校准结束
+        ;
 }
 
 /**
  * @brief 旋转电位器单次采集
- * 
- * @return uint16_t 
+ *
+ * @return uint16_t 采集值, 0-4095
  */
 uint16_t r37SingleConj(void)
 {
-    
+    ADC_SoftwareStartConvCmd(ADC1, ENABLE); // 触发转换
+    while (!ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC))
+        ;                                // 等待转换完成
+    return ADC_GetConversionValue(ADC1); // 返回转换结果
 }
