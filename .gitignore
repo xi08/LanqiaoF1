@@ -1,5 +1,4 @@
 # A .gitignore for Keil projects.
-# Taken mostly from http://www.keil.com/support/man/docs/uv4/uv4_b_filetypes.htm
 
 # uVision files
 *.opt
@@ -8,13 +7,13 @@
 *uvgui*
 *uvproj.bak
 
-# legacy code file
-*_legacy*
-
 # Listing, Object, and Debug folder
 /Listings
 /Objects
 /DebugConfig
+
+# Legacy code file
+*_legacy*
 
 # Binary files
 *.axf
@@ -35,7 +34,7 @@
 *.__i
 *._ii
 *.map
-
+*.lst
 
 # Debugger files
 *.ini
@@ -54,7 +53,6 @@
 *.sct
 *.sfd
 *.sfr
-*.lst
 
 # Misc
 *.tra

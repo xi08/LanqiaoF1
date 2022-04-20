@@ -1,8 +1,7 @@
 // code = utf-8
 
 #include "r37.h"
-
-uint16_t r37_ADCVal[16];
+uint16_t r37_ADCVal[10];
 
 /**
  * @brief 旋转电位器DMA采集初始化
@@ -21,7 +20,7 @@ void r37DmaInit(void)
     initStruct_DMA.DMA_PeripheralBaseAddr = (ADC1_BASE + 0x4c);              // 设置外设地址为ADC1规则通道转换结果寄存器
     initStruct_DMA.DMA_MemoryBaseAddr = (uint32_t)r37_ADCVal;                // 设置内存地址
     initStruct_DMA.DMA_DIR = DMA_DIR_PeripheralSRC;                          // 设置DMA传输方向为外设到内存
-    initStruct_DMA.DMA_BufferSize = 16;                                      // 设置DMA缓冲区空间
+    initStruct_DMA.DMA_BufferSize = 10;                                      // 设置DMA缓冲区空间
     initStruct_DMA.DMA_PeripheralInc = DMA_PeripheralInc_Disable;            // 设置为关闭外设地址自动递增
     initStruct_DMA.DMA_MemoryInc = DMA_MemoryInc_Enable;                     // 设置为开启内存地址自动递增
     initStruct_DMA.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord; // 设置外设数据宽度为半字
