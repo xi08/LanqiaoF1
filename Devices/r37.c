@@ -1,6 +1,11 @@
 // code = utf-8
 
 #include "r37.h"
+
+/**
+ * @brief 旋转电位器DMA采集结果
+ * 
+ */
 uint16_t r37_ADCVal[10];
 
 /**
@@ -48,15 +53,15 @@ void r37DmaInit(void)
     ADC_Init(ADC1, &initStruct_ADC);                                 // 写入ADC1设置
 
     /* ADC通道配置 */
-    ADC_RegularChannelConfig(ADC1, ADC_Channel_8, 1, ADC_SampleTime_7Cycles5); //设置ADC1CH8采样周期为7.5
+    ADC_RegularChannelConfig(ADC1, ADC_Channel_8, 1, ADC_SampleTime_7Cycles5); // 设置ADC1CH8采样周期为7.5
 
     ADC_DMACmd(ADC1, ENABLE); // 使能ADC1的DMA
     ADC_Cmd(ADC1, ENABLE);    // 使能ADC1
 
     ADC_StartCalibration(ADC1); // 开始ADC1自校准
-    while (ADC_GetCalibrationStatus(ADC1))
+    while (ADC_GetCalibrationStatus(ADC1))// 等待ADC1自校准结束
         ;
-    ADC_SoftwareStartConvCmd(ADC1, ENABLE); // 触发ADC1转换
+    ADC_SoftwareStartConvCmd(ADC1, ENABLE); // 软件触发首次ADC1转换
 }
 
 /**

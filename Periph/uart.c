@@ -119,7 +119,8 @@ void USART1_IRQHandler(void)
         {
             uartRxBuffer[0][uartRxBufferIdx[0]] = '\0';
             uartRxBufferIdx[0] = 0;
-            uartRxBufferDirtyFlag |= 1;
+            uartRxBufferDirtyFlag |= (1<<0);
+            
         }
         else
             uartRxBuffer[0][uartRxBufferIdx[0]++] = ch;
@@ -140,7 +141,7 @@ void USART2_IRQHandler(void)
         {
             uartRxBuffer[1][uartRxBufferIdx[1]] = '\0';
             uartRxBufferIdx[1] = 0;
-            uartRxBufferDirtyFlag |= 2;
+            uartRxBufferDirtyFlag |= (1<<1);
         }
         else
             uartRxBuffer[1][uartRxBufferIdx[1]++] = ch;
@@ -174,14 +175,8 @@ void uartSend(USART_TypeDef *commPort, uint8_t *Str)
         uartSendChar(commPort, *Str++);
 }
 
-//重定向stdio到uart
+// 重定向stdout到uart
 int fputc(int ch, FILE *f)
 {
     return (uartSendChar(USART2, ch));
-}
-int fgetc(FILE *f)
-{
-    while (!USART_GetFlagStatus(USART2, USART_FLAG_RXNE))
-        ;
-    return (int)USART_ReceiveData(USART2);
 }

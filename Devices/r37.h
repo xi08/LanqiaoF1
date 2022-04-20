@@ -8,7 +8,7 @@
  * @brief 旋转电位器DMA采集结果
  *
  */
-extern uint16_t r37_ADCVal[16];
+extern uint16_t r37_ADCVal[10];
 
 void r37Init(void);
 void r37DmaInit(void);
