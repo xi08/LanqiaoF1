@@ -138,8 +138,13 @@ void SysTick_Handler(void)
 {
   sysTime++;
 
+  timeFlag |= 0x01; // 1ms
+  if (sysTime % 10 == 0)
+    timeFlag |= 0x02; // 10ms
+  if (sysTime % 100 == 0)
+    timeFlag |= 0x04; // 100ms
   if (sysTime % 1000 == 0)
-    timeFlag |= (1 << 0);
+    timeFlag |= 0x08; // 1000ms
 }
 
 /******************************************************************************/

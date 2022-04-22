@@ -11,9 +11,14 @@ extern volatile uint32_t sysTime;
 
 /**
  * @brief 全局计时标记
- * 
+ *
  */
 extern volatile uint8_t timeFlag;
+
+#define tF_1ms (0x01)
+#define tF_10ms (0x02)
+#define tF_100ms (0x04)
+#define tF_1000ms (0x08)
 
 void sysTimeInit(void);
 void delay1ms(uint32_t t);
