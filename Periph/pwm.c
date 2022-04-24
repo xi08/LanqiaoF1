@@ -123,17 +123,20 @@ void pwmGetInputPWM_PA7(uint32_t *freq, uint16_t *duty)
  */
 void pwmSWGetInputPWM_PA7(uint32_t *freq, uint16_t *duty)
 {
+    uint32_t tmp1, tmp2;
     TIM_PrescalerConfig(TIM3, 1099, TIM_PSCReloadMode_Update);
     while (!TIM_GetFlagStatus(TIM3, TIM_FLAG_CC2))
         ;
-    (*freq) = SystemCoreClock / (TIM3->PSC + 1) / (TIM3->CCR2 + 1) + 1;
-    (*duty) = 10000 * (TIM3->CCR1 + 1) / (TIM3->CCR2 + 1);
-    if (*freq >= 1000)
+    tmp1 = SystemCoreClock / (TIM3->PSC + 1) / (TIM3->CCR2 + 1) + 1;
+    tmp2 = 10000 * (TIM3->CCR1 + 1) / (TIM3->CCR2 + 1);
+    if ((*freq) >= 2000)
     {
         TIM_PrescalerConfig(TIM3, 0, TIM_PSCReloadMode_Update);
         while (!TIM_GetFlagStatus(TIM3, TIM_FLAG_CC2))
             ;
-        (*freq) = SystemCoreClock / (TIM3->PSC + 1) / (TIM3->CCR2 + 1) + 1;
-        (*duty) = 10000 * (TIM3->CCR1 + 1) / (TIM3->CCR2 + 1);
+        tmp1 = SystemCoreClock / (TIM3->PSC + 1) / (TIM3->CCR2 + 1) + 1;
+        tmp2 = 10000 * (TIM3->CCR1 + 1) / (TIM3->CCR2 + 1);
     }
+    (*freq)=tmp1;
+    (*duty)=tmp2;
 }

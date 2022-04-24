@@ -62,7 +62,7 @@ int main()
     LCD_ClearLine(Line2);
 
     LCD_DisplayStringLine(Line5, "PWM Status:");
-    pa1_freq = 17000;
+    pa1_freq = 1000;
     pa1_duty = 0;
     pwmOutputInit_PA1(pa1_freq, pa1_duty);
     pwmInputInit_PA7();
@@ -129,9 +129,9 @@ int main()
         if (pwmRefreshFlag & (1 << 0))
         {
             pwmRefreshFlag &= ~(1 << 0);
-            if (pa1_freq > 1000000)
+            if (pa1_freq >= 1000000)
                 sprintf((char *)dispBuffer, "PA1:%.2fMHz/%3.2f%%", (float)pa1_freq / 1000000, (float)pa1_duty / 100);
-            else if (pa1_freq > 1000)
+            else if (pa1_freq >= 1000)
                 sprintf((char *)dispBuffer, "PA1:%.2fkHz/%3.2f%%", (float)pa1_freq / 1000, (float)pa1_duty / 100);
             else
                 sprintf((char *)dispBuffer, "PA1:%.2fHz/%3.2f%%", (float)pa1_freq, (float)pa1_duty / 100);
@@ -144,9 +144,9 @@ int main()
         if (pwmRefreshFlag & (1 << 1))
         {
             pwmRefreshFlag &= ~(1 << 1);
-            if (pa6_freq > 1000000)
+            if (pa6_freq >= 1000000)
                 sprintf((char *)dispBuffer, "PA6:%.2fMHz/%3.2f%%", (float)pa6_freq / 1000000, (float)pa6_duty / 100);
-            else if (pa6_freq > 1000)
+            else if (pa6_freq >= 1000)
                 sprintf((char *)dispBuffer, "PA6:%.2fkHz/%3.2f%%", (float)pa6_freq / 1000, (float)pa6_duty / 100);
             else
                 sprintf((char *)dispBuffer, "PA6:%.2fHz/%3.2f%%", (float)pa6_freq, (float)pa6_duty / 100);
