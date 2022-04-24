@@ -15,10 +15,15 @@ extern volatile uint32_t sysTime;
  */
 extern volatile uint8_t timeFlag;
 
-#define tF_1ms (0x01)
-#define tF_10ms (0x02)
-#define tF_100ms (0x04)
-#define tF_1000ms (0x08)
+#define tF_1ms 1
+#define tF_10ms 2
+#define tF_100ms 4
+#define tF_1000ms 8
+#define tF_5ms 16
+#define tF_50ms 32
+#define tF_500ms 64
+#define tF_30Hz 128
+
 
 void sysTimeInit(void);
 void delay1ms(uint32_t t);

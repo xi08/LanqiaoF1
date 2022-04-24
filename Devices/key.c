@@ -1,7 +1,6 @@
-// code = utf-8 
+// code = utf-8
 #include "key.h"
 #include "sysTime.h"
-
 
 /**
  * @brief 等待确认状态进入时间戳
@@ -59,12 +58,8 @@ void updateKey(void)
                 keyState[i] = S2;
                 keyPressTimestamp[i] = sysTime;
                 break;
-            case S2:
-                if (sysTime - keyPressTimestamp[i] >= keyLongPressTime)
-                    keyState[i] = S4;
-                break;
+
             default:
-                keyState[i] = S0;
                 break;
             }
         }
@@ -74,14 +69,14 @@ void updateKey(void)
             switch (keyState[i])
             {
             case S2:
-                if (sysTime - keyPressTimestamp[i] >= keyShortPressTime)
+                if (sysTime - keyPressTimestamp[i] >= keyLongPressTime)
+                    keyState[i] = S3;
+                else if (sysTime - keyPressTimestamp[i] >= keyShortPressTime)
                     keyState[i] = S1;
                 else
                     keyState[i] = S0;
                 break;
-            case S4:
-                keyState[i] = S3;
-                break;
+
             default:
                 keyState[i] = S0;
                 break;

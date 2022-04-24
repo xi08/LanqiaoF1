@@ -18,15 +18,26 @@
 
 // 旋转电位器滤波前缓冲
 uint16_t r37FilterValue, r37FilterMax, r37FilterMin;
-// 旋转电位器标记位
-uint8_t r37Flag;
 // 旋转电位器转换后当前值
 float r37Val;
-// 旋转电位器转换后上一次值
-float r37Val_1;
+
+// e2prom镜像
+uint8_t e2promReadBuffer[16][16];
+uint8_t e2promWriteBuffer[16][16];
 
 // 显示缓冲
 uint8_t dispBuffer[21];
+
+// PWM 刷新标记
+uint8_t pwmRefreshFlag; // PA1刷新标记-PA6刷新标记
+
+// PA1_PWM 参数
+uint32_t pa1_freq;
+uint16_t pa1_duty;
+
+// PA6_PWM 参数
+uint32_t pa6_freq;
+uint16_t pa6_duty;
 
 int main()
 {
@@ -41,7 +52,6 @@ int main()
     ledDisp(0x0);        // 清除LED显示
     r37DmaInit();        // 初始化旋转电位器
     at24c02_init();      // 初始化E2PROM
-
     LCD_DisplayStringLine(Line0, "CT117E V1.1");
     LCD_DisplayStringLine(Line1, "Compiled in");
     sprintf((char *)dispBuffer, "%s,%s", __TIME__, __DATE__);
@@ -50,8 +60,34 @@ int main()
     delay1ms(1000);
     LCD_ClearLine(Line1);
     LCD_ClearLine(Line2);
+
+    LCD_DisplayStringLine(Line5, "PWM Status:");
+    pa1_freq = 17000;
+    pa1_duty = 0;
+    pwmOutputInit_PA1(pa1_freq, pa1_duty);
+    pwmInputInit_PA7();
+
     while (1)
     {
+        // 100ms定时执行
+        if (timeFlag & tF_100ms)
+        {
+            timeFlag &= ~tF_100ms;
+            pwmGetInputPWM_PA7(&pa6_freq, &pa6_duty);
+            pwmRefreshFlag |= (1 << 1);
+
+            pa1_duty = r37Val * 10000;
+            pwmChangeOutputDuty_PA1(pa1_duty);
+            pwmRefreshFlag |= (1 << 0);
+        }
+
+        // 1s定时执行
+        if (timeFlag & tF_1000ms)
+        {
+            timeFlag &= ~tF_1000ms;
+            // 输出r37
+            // printf("r37=%3.2fV\n", r37Val * 3.3);
+        }
 
         // 按键
         updateKey();
@@ -60,20 +96,10 @@ int main()
         // 串口2接收
         if (uartRxBufferDirtyFlag & (1 << 1))
         {
-            LCD_DisplayStringLine(Line2, uartRxBuffer[1]);
-        }
-
-        // 1s定时执行
-        if (timeFlag & tF_1000ms)
-        {
-            timeFlag &= ~tF_1000ms;
-            // 输出旋转电位器转换值
-            if (r37Flag & (1 << 0))
-            {
-                sprintf((char *)dispBuffer, "r37=%.2fV", r37Val);
-                printf("%s\n", dispBuffer);
-                LCD_DisplayStringLine(Line1, dispBuffer);
-            }
+            uartRxBufferDirtyFlag &= ~(1 << 1);
+            sprintf((char *)dispBuffer, "UART2:%s", uartRxBuffer[1]);
+            LCD_ClearLine(Line2);
+            LCD_DisplayStringLine(Line2, dispBuffer);
         }
 
         //  旋转电位器转换
@@ -83,8 +109,6 @@ int main()
             r37FilterMax = 0;
             r37FilterMin = 0xffff;
             r37FilterValue = 0;
-            // 写入上一次结果
-            r37Val_1 = r37Val;
             // 滤波
             for (i = 0; i < 10; i++)
             {
@@ -98,9 +122,37 @@ int main()
             r37FilterValue -= r37FilterMin;
             r37FilterValue >>= 3;
             // 转换
-            r37Val = 3.3 * (float)r37FilterValue / 4095;
-            // 设置标记位
-            r37Flag |= (1 << 0);
+            r37Val = (float)r37FilterValue / 4095;
+        }
+
+        // PA1_PWM 显示混合
+        if (pwmRefreshFlag & (1 << 0))
+        {
+            pwmRefreshFlag &= ~(1 << 0);
+            if (pa1_freq > 1000000)
+                sprintf((char *)dispBuffer, "PA1:%.2fMHz/%3.2f%%", (float)pa1_freq / 1000000, (float)pa1_duty / 100);
+            else if (pa1_freq > 1000)
+                sprintf((char *)dispBuffer, "PA1:%.2fkHz/%3.2f%%", (float)pa1_freq / 1000, (float)pa1_duty / 100);
+            else
+                sprintf((char *)dispBuffer, "PA1:%.2fHz/%3.2f%%", (float)pa1_freq, (float)pa1_duty / 100);
+
+            LCD_ClearLine(Line6);
+            LCD_DisplayStringLine(Line6, dispBuffer);
+        }
+
+        // PA6_PWM 显示混合
+        if (pwmRefreshFlag & (1 << 1))
+        {
+            pwmRefreshFlag &= ~(1 << 1);
+            if (pa6_freq > 1000000)
+                sprintf((char *)dispBuffer, "PA6:%.2fMHz/%3.2f%%", (float)pa6_freq / 1000000, (float)pa6_duty / 100);
+            else if (pa6_freq > 1000)
+                sprintf((char *)dispBuffer, "PA6:%.2fkHz/%3.2f%%", (float)pa6_freq / 1000, (float)pa6_duty / 100);
+            else
+                sprintf((char *)dispBuffer, "PA6:%.2fHz/%3.2f%%", (float)pa6_freq, (float)pa6_duty / 100);
+
+            LCD_ClearLine(Line7);
+            LCD_DisplayStringLine(Line7, dispBuffer);
         }
     }
 }
@@ -114,11 +166,25 @@ void keyProg(void)
     {
     case S1: // 短按
 
-        break;
-    case S3: // 长按
-    case S4:
+        pwmSWGetInputPWM_PA7(&pa6_freq, &pa6_duty);
+        pwmRefreshFlag |= (1 << 1);
 
+        LCD_ClearLine(Line2);
+        LCD_SetTextColor(0xbc40);
+        LCD_DisplayStringLine(Line2, "B1 Short");
+        LCD_SetTextColor(Black);
+        keyState[0] = S0;
         break;
+
+    case S3: // 长按
+
+        LCD_ClearLine(Line2);
+        LCD_SetTextColor(Blue);
+        LCD_DisplayStringLine(Line2, "B1 Long");
+        LCD_SetTextColor(Black);
+        keyState[0] = S0;
+        break;
+
     default:
         break;
     }
@@ -127,11 +193,22 @@ void keyProg(void)
     {
     case S1: // 短按
 
+        LCD_ClearLine(Line2);
+        LCD_SetTextColor(0xbc40);
+        LCD_DisplayStringLine(Line2, "B2 Short");
+        LCD_SetTextColor(Black);
+        keyState[1] = S0;
         break;
-    case S3: // 长按
-    case S4:
 
+    case S3: // 长按
+
+        LCD_ClearLine(Line2);
+        LCD_SetTextColor(Blue);
+        LCD_DisplayStringLine(Line2, "B2 Long");
+        LCD_SetTextColor(Black);
+        keyState[1] = S0;
         break;
+
     default:
         break;
     }
@@ -140,11 +217,28 @@ void keyProg(void)
     {
     case S1: // 短按
 
-        break;
-    case S3: // 长按
-    case S4:
+        pa1_freq += 10;
+        pwmChangeOutputFreq_PA1(pa1_freq);
 
+        LCD_ClearLine(Line2);
+        LCD_SetTextColor(0xbc40);
+        LCD_DisplayStringLine(Line2, "B3 Short");
+        LCD_SetTextColor(Black);
+        keyState[2] = S0;
         break;
+
+    case S3: // 长按
+
+        pa1_freq += 1000;
+        pwmChangeOutputFreq_PA1(pa1_freq);
+
+        LCD_ClearLine(Line2);
+        LCD_SetTextColor(Blue);
+        LCD_DisplayStringLine(Line2, "B3 Long");
+        LCD_SetTextColor(Black);
+        keyState[2] = S0;
+        break;
+
     default:
         break;
     }
@@ -153,11 +247,28 @@ void keyProg(void)
     {
     case S1: // 短按
 
-        break;
-    case S3: // 长按
-    case S4:
+        pa1_freq -= 10;
+        pwmChangeOutputFreq_PA1(pa1_freq);
 
+        LCD_ClearLine(Line2);
+        LCD_SetTextColor(0xbc40);
+        LCD_DisplayStringLine(Line2, "B4 Short");
+        LCD_SetTextColor(Black);
+        keyState[3] = S0;
         break;
+
+    case S3: // 长按
+
+        pa1_freq -= 1000;
+        pwmChangeOutputFreq_PA1(pa1_freq);
+
+        LCD_ClearLine(Line2);
+        LCD_SetTextColor(Blue);
+        LCD_DisplayStringLine(Line2, "B4 Long");
+        LCD_SetTextColor(Black);
+        keyState[3] = S0;
+        break;
+
     default:
         break;
     }

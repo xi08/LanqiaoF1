@@ -136,7 +136,7 @@ void USART2_IRQHandler(void)
     uint8_t ch;
     if (USART_GetITStatus(USART2, USART_IT_RXNE))
     {
-        ch = USART_ReceiveData(USART1);
+        ch = USART_ReceiveData(USART2);
         if (ch == (uint8_t)uartStopSymbol)
         {
             uartRxBuffer[1][uartRxBufferIdx[1]] = '\0';

@@ -138,13 +138,21 @@ void SysTick_Handler(void)
 {
   sysTime++;
 
-  timeFlag |= 0x01; // 1ms
+  timeFlag |= 1; // 1ms
   if (sysTime % 10 == 0)
-    timeFlag |= 0x02; // 10ms
+    timeFlag |= 2; // 10ms
   if (sysTime % 100 == 0)
-    timeFlag |= 0x04; // 100ms
+    timeFlag |= 4; // 100ms
   if (sysTime % 1000 == 0)
-    timeFlag |= 0x08; // 1000ms
+    timeFlag |= 8; // 1000ms
+  if (sysTime % 5 == 0)
+    timeFlag |= 16; // 5ms
+  if (sysTime % 50 == 0)
+    timeFlag |= 32; // 50ms
+  if (sysTime % 500 == 0)
+    timeFlag |= 64; // 500ms
+  if (sysTime % 33 == 0)
+    timeFlag |= 128;//30Hz Display
 }
 
 /******************************************************************************/

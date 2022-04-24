@@ -72,20 +72,17 @@ uint8_t at24c02_read(uint8_t source)
 void at24c02_writePage(uint8_t destin, uint8_t *source, uint8_t n)
 {
     i2cSTART();
-
     i2cSend((at24c02_addr << 1) | 0);
     i2cWaitACK();
-
     i2cSend(destin);
     i2cWaitACK();
-
     while (n--)
     {
         i2cSend(*source++);
         i2cWaitACK();
     }
-
     i2cSTOP();
+
     delay1ms(6);
 }
 
@@ -99,18 +96,14 @@ void at24c02_writePage(uint8_t destin, uint8_t *source, uint8_t n)
 void at24c02_readPage(uint8_t source, uint8_t *destin, uint8_t n)
 {
     i2cSTART();
-
     i2cSend((at24c02_addr << 1) | 0);
     i2cWaitACK();
-
     i2cSend(source);
     i2cWaitACK();
 
     i2cSTART();
-
     i2cSend((at24c02_addr << 1) | 1);
     i2cWaitACK();
-
     while (n--)
     {
         *destin++ = i2cReceive();
@@ -119,6 +112,5 @@ void at24c02_readPage(uint8_t source, uint8_t *destin, uint8_t n)
         else
             i2cNACK();
     }
-
     i2cSTOP();
 }
