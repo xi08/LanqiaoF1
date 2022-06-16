@@ -32,7 +32,6 @@ void keyInit(void)
     keyStruct_GPIO.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_2;
     GPIO_Init(GPIOB, &keyStruct_GPIO);
 }
-
 /**
  * @brief 更新按键信息
  *
@@ -40,7 +39,6 @@ void keyInit(void)
 void updateKey(void)
 {
     uint8_t i = keyNum, keyInfo = 0xff;
-
     /* 获取按键信息 */
     keyInfo ^= (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0) << 0);
     keyInfo ^= (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_8) << 1);

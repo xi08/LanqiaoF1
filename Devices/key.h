@@ -5,9 +5,9 @@
 
 // 按键数量
 #define keyNum 4
-//长按所需时长 (ms)
+//长按所需周期
 #define keyLongPressTime 800
-//短按所需时长 (ms)
+//短按所需周期
 #define keyShortPressTime 50
 
 /**

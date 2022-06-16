@@ -10,11 +10,10 @@
 #include "r37.h"
 #include "sysTime.h"
 #include "uart.h"
-#include "pwm.h"
 
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 // 旋转电位器滤波前缓冲
 uint16_t r37FilterValue, r37FilterMax, r37FilterMin;
@@ -61,32 +60,17 @@ int main()
     LCD_ClearLine(Line1);
     LCD_ClearLine(Line2);
 
-    LCD_DisplayStringLine(Line5, "PWM Status:");
-    pa1_freq = 1000;
-    pa1_duty = 0;
-    pwmOutputInit_PA1(pa1_freq, pa1_duty);
-    pwmInputInit_PA7();
-
     while (1)
     {
-        // 100ms定时执行
-        if (timeFlag & tF_100ms)
-        {
-            timeFlag &= ~tF_100ms;
-            pwmGetInputPWM_PA7(&pa6_freq, &pa6_duty);
-            pwmRefreshFlag |= (1 << 1);
-
-            pa1_duty = r37Val * 10000;
-            pwmChangeOutputDuty_PA1(pa1_duty);
-            pwmRefreshFlag |= (1 << 0);
-        }
-
         // 1s定时执行
         if (timeFlag & tF_1000ms)
         {
             timeFlag &= ~tF_1000ms;
             // 输出r37
-            // printf("r37=%3.2fV\n", r37Val * 3.3);
+            printf("r37=%3.2fV\n", r37Val * 3.3);
+            sprintf((char *)dispBuffer, "r37=%.2f", r37Val * 3.3);
+            LCD_ClearLine(Line1);
+            LCD_DisplayStringLine(Line1, dispBuffer);
         }
 
         // 按键
@@ -124,38 +108,9 @@ int main()
             // 转换
             r37Val = (float)r37FilterValue / 4095;
         }
-
-        // PA1_PWM 显示混合
-        if (pwmRefreshFlag & (1 << 0))
-        {
-            pwmRefreshFlag &= ~(1 << 0);
-            if (pa1_freq >= 1000000)
-                sprintf((char *)dispBuffer, "PA1:%.2fMHz/%3.2f%%", (float)pa1_freq / 1000000, (float)pa1_duty / 100);
-            else if (pa1_freq >= 1000)
-                sprintf((char *)dispBuffer, "PA1:%.2fkHz/%3.2f%%", (float)pa1_freq / 1000, (float)pa1_duty / 100);
-            else
-                sprintf((char *)dispBuffer, "PA1:%.2fHz/%3.2f%%", (float)pa1_freq, (float)pa1_duty / 100);
-
-            LCD_ClearLine(Line6);
-            LCD_DisplayStringLine(Line6, dispBuffer);
         }
-
-        // PA6_PWM 显示混合
-        if (pwmRefreshFlag & (1 << 1))
-        {
-            pwmRefreshFlag &= ~(1 << 1);
-            if (pa6_freq >= 1000000)
-                sprintf((char *)dispBuffer, "PA6:%.2fMHz/%3.2f%%", (float)pa6_freq / 1000000, (float)pa6_duty / 100);
-            else if (pa6_freq >= 1000)
-                sprintf((char *)dispBuffer, "PA6:%.2fkHz/%3.2f%%", (float)pa6_freq / 1000, (float)pa6_duty / 100);
-            else
-                sprintf((char *)dispBuffer, "PA6:%.2fHz/%3.2f%%", (float)pa6_freq, (float)pa6_duty / 100);
-
-            LCD_ClearLine(Line7);
-            LCD_DisplayStringLine(Line7, dispBuffer);
-        }
-    }
 }
+
 /**
  * @brief 按键响应
  *
@@ -165,10 +120,6 @@ void keyProg(void)
     switch (keyState[0]) // KEY0, B1
     {
     case S1: // 短按
-
-        pwmSWGetInputPWM_PA7(&pa6_freq, &pa6_duty);
-        pwmRefreshFlag |= (1 << 1);
-
         LCD_ClearLine(Line2);
         LCD_SetTextColor(0xbc40);
         LCD_DisplayStringLine(Line2, "B1 Short");
@@ -177,7 +128,6 @@ void keyProg(void)
         break;
 
     case S3: // 长按
-
         LCD_ClearLine(Line2);
         LCD_SetTextColor(Blue);
         LCD_DisplayStringLine(Line2, "B1 Long");
@@ -216,10 +166,6 @@ void keyProg(void)
     switch (keyState[2]) // KEY2, B3
     {
     case S1: // 短按
-
-        pa1_freq += 10;
-        pwmChangeOutputFreq_PA1(pa1_freq);
-
         LCD_ClearLine(Line2);
         LCD_SetTextColor(0xbc40);
         LCD_DisplayStringLine(Line2, "B3 Short");
@@ -228,10 +174,6 @@ void keyProg(void)
         break;
 
     case S3: // 长按
-
-        pa1_freq += 1000;
-        pwmChangeOutputFreq_PA1(pa1_freq);
-
         LCD_ClearLine(Line2);
         LCD_SetTextColor(Blue);
         LCD_DisplayStringLine(Line2, "B3 Long");
@@ -246,10 +188,6 @@ void keyProg(void)
     switch (keyState[3]) // KEY3, B4
     {
     case S1: // 短按
-
-        pa1_freq -= 10;
-        pwmChangeOutputFreq_PA1(pa1_freq);
-
         LCD_ClearLine(Line2);
         LCD_SetTextColor(0xbc40);
         LCD_DisplayStringLine(Line2, "B4 Short");
@@ -258,10 +196,6 @@ void keyProg(void)
         break;
 
     case S3: // 长按
-
-        pa1_freq -= 1000;
-        pwmChangeOutputFreq_PA1(pa1_freq);
-
         LCD_ClearLine(Line2);
         LCD_SetTextColor(Blue);
         LCD_DisplayStringLine(Line2, "B4 Long");

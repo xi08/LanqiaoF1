@@ -137,7 +137,6 @@ extern volatile uint8_t timeFlag;
 void SysTick_Handler(void)
 {
   sysTime++;
-
   timeFlag |= 1; // 1ms
   if (sysTime % 10 == 0)
     timeFlag |= 2; // 10ms
