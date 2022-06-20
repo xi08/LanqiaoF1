@@ -43,7 +43,7 @@ void delay1ms(uint32_t t)
     uint32_t delay1msStartTimestamp = sysTime, delayTime = t;
     if (delayTime < 0xffffffff)
         delayTime++;
-    while (sysTime - delay1msStartTimestamp < delayTime)
+    while (sysTime - delay1msStartTimestamp < delayTime) // 等待
         ;
 }
 
@@ -58,7 +58,7 @@ void delay2us(uint32_t t)
     {
         TIM_ClearFlag(TIM4, TIM_FLAG_Update);
         TIM_Cmd(TIM4, ENABLE);
-        while (TIM_GetFlagStatus(TIM4, TIM_FLAG_Update) == RESET)
+        while (!TIM_GetFlagStatus(TIM4, TIM_FLAG_Update)) // 等待
             ;
     }
 }

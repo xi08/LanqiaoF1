@@ -1,4 +1,4 @@
-// code = utf-8 
+// code = utf-8
 #include "i2c.h"
 #include "sysTime.h"
 
@@ -12,12 +12,16 @@
  */
 void i2cInit(void)
 {
-	GPIO_InitTypeDef i2cGPIO;
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
-	i2cGPIO.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
-	i2cGPIO.GPIO_Speed = GPIO_Speed_10MHz;
-	i2cGPIO.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_Init(GPIOB, &i2cGPIO);
+    GPIO_InitTypeDef initStruct_gpio;
+
+    /* 设置时钟 */
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+
+    /* 设置引脚 */
+    initStruct_gpio.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7; // 设置引脚号
+    initStruct_gpio.GPIO_Speed = GPIO_Speed_10MHz;      // 设置引脚速度
+    initStruct_gpio.GPIO_Mode = GPIO_Mode_Out_PP;       // 设置引脚为普通推挽输出
+    GPIO_Init(GPIOB, &initStruct_gpio);                 // 配置引脚
 }
 
 /**
@@ -26,11 +30,13 @@ void i2cInit(void)
  */
 void i2cOutputMode(void)
 {
-	GPIO_InitTypeDef i2cGPIO;
-	i2cGPIO.GPIO_Pin = GPIO_Pin_7;
-	i2cGPIO.GPIO_Speed = GPIO_Speed_10MHz;
-	i2cGPIO.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_Init(GPIOB, &i2cGPIO);
+    GPIO_InitTypeDef i2cGPIO;
+
+    /* 设置引脚 */
+    i2cGPIO.GPIO_Pin = GPIO_Pin_7;         // 设置引脚号
+    i2cGPIO.GPIO_Speed = GPIO_Speed_10MHz; // 设置引脚速度
+    i2cGPIO.GPIO_Mode = GPIO_Mode_Out_PP;  // 设置引脚为普通推挽输出
+    GPIO_Init(GPIOB, &i2cGPIO);            // 配置引脚
 }
 
 /**
@@ -39,11 +45,12 @@ void i2cOutputMode(void)
  */
 void i2cInputMode(void)
 {
-	GPIO_InitTypeDef i2cGPIO;
-	i2cGPIO.GPIO_Pin = GPIO_Pin_7;
-	i2cGPIO.GPIO_Speed = GPIO_Speed_10MHz;
-	i2cGPIO.GPIO_Mode = GPIO_Mode_IPD;
-	GPIO_Init(GPIOB, &i2cGPIO);
+    GPIO_InitTypeDef i2cGPIO;
+
+    /* 设置引脚 */
+    i2cGPIO.GPIO_Pin = GPIO_Pin_7;     // 设置引脚号
+    i2cGPIO.GPIO_Mode = GPIO_Mode_IPD; // 设置引脚为下拉输入
+    GPIO_Init(GPIOB, &i2cGPIO);        // 配置引脚
 }
 
 /**
@@ -52,16 +59,16 @@ void i2cInputMode(void)
  */
 void i2cReset(void)
 {
-	uint8_t i;
-	for (i = 0; i < 9; i++)
-	{
-		i2cSCLOutput(1);
-		i2cDelay();
-		i2cSCLOutput(0);
-		i2cDelay();
-		if (!i2cSDAInput())
-			return;
-	}
+    uint8_t i;
+    for (i = 0; i < 9; i++)
+    {
+        i2cSCLOutput(1);
+        i2cDelay();
+        i2cSCLOutput(0);
+        i2cDelay();
+        if (!i2cSDAInput())
+            return;
+    }
 }
 
 /**
@@ -70,12 +77,12 @@ void i2cReset(void)
  */
 void i2cSTART(void)
 {
-	i2cSDAOutput(1);
-	i2cSCLOutput(1);
-	i2cDelay();
-	i2cSDAOutput(0);
-	i2cDelay();
-	i2cSCLOutput(0);
+    i2cSDAOutput(1);
+    i2cSCLOutput(1);
+    i2cDelay();
+    i2cSDAOutput(0);
+    i2cDelay();
+    i2cSCLOutput(0);
 }
 
 /**
@@ -84,113 +91,113 @@ void i2cSTART(void)
  */
 void i2cSTOP(void)
 {
-	i2cSDAOutput(0);
-	i2cSCLOutput(1);
-	i2cDelay();
-	i2cSDAOutput(1);
-	i2cDelay();
-	i2cSCLOutput(0);
+    i2cSDAOutput(0);
+    i2cSCLOutput(1);
+    i2cDelay();
+    i2cSDAOutput(1);
+    i2cDelay();
+    i2cSCLOutput(0);
 }
 
 /**
  * @brief 发送应答信号
- * 
+ *
  */
 void i2cACK(void)
 {
-	i2cSDAOutput(0);
-	i2cDelay();
-	i2cSCLOutput(1);
-	i2cDelay();
-	i2cSCLOutput(0);
-	i2cDelay();
-	i2cSDAOutput(1);
+    i2cSDAOutput(0);
+    i2cDelay();
+    i2cSCLOutput(1);
+    i2cDelay();
+    i2cSCLOutput(0);
+    i2cDelay();
+    i2cSDAOutput(1);
 }
 
 /**
  * @brief 发送非应答信号
- * 
+ *
  */
 void i2cNACK(void)
 {
-	i2cSDAOutput(1);
-	i2cDelay();
-	i2cSCLOutput(1);
-	i2cDelay();
-	i2cSCLOutput(0);
-	i2cDelay();
+    i2cSDAOutput(1);
+    i2cDelay();
+    i2cSCLOutput(1);
+    i2cDelay();
+    i2cSCLOutput(0);
+    i2cDelay();
 }
 
 /**
  * @brief 等待回复ACK信号
- * 
+ *
  * @return uint8_t 运行状态
  */
 uint8_t i2cWaitACK(void)
 {
-	uint8_t errTime = 5;
-	i2cInputMode();
-	i2cDelay();
-	i2cSCLOutput(1);
-	i2cDelay();
-	while (i2cSDAInput())
-	{
-		errTime--;
-		i2cDelay();
-		if (!errTime)
-		{
-			i2cOutputMode();
-			i2cSTOP();
-			return 1;
-		}
-	}
-	i2cSCLOutput(0);
-	i2cDelay();
-	i2cOutputMode();
-	return 0;
+    uint8_t errTime = 5;
+    i2cInputMode();
+    i2cDelay();
+    i2cSCLOutput(1);
+    i2cDelay();
+    while (i2cSDAInput())
+    {
+        errTime--;
+        i2cDelay();
+        if (!errTime)
+        {
+            i2cOutputMode();
+            i2cSTOP();
+            return 1;
+        }
+    }
+    i2cSCLOutput(0);
+    i2cDelay();
+    i2cOutputMode();
+    return 0;
 }
 /**
  * @brief 发送单字节
- * 
+ *
  * @param dat 需要发送的数据
  */
 void i2cSend(uint8_t dat)
 {
-	uint8_t i;
-	i2cOutputMode();
-	for (i = 0; i < 8; i++)
-	{
-		i2cSCLOutput(0);
-		i2cDelay();
-		i2cSDAOutput(dat & 0x80);
-		dat <<= 1;
-		i2cDelay();
-		i2cSCLOutput(1);
-		i2cDelay();
-	}
-	i2cSCLOutput(0);
-	i2cDelay();
+    uint8_t i;
+    i2cOutputMode();
+    for (i = 0; i < 8; i++)
+    {
+        i2cSCLOutput(0);
+        i2cDelay();
+        i2cSDAOutput(dat & 0x80);
+        dat <<= 1;
+        i2cDelay();
+        i2cSCLOutput(1);
+        i2cDelay();
+    }
+    i2cSCLOutput(0);
+    i2cDelay();
 }
 
 /**
  * @brief 接受单字节
- * 
- * @return uint8_t 接收到的数据 
+ *
+ * @return uint8_t 接收到的数据
  */
 uint8_t i2cReceive(void)
 {
-	uint8_t i;
-	uint8_t data = 0;
-	i2cInputMode();
-	for (i = 0; i < 8; i++)
-	{
-		data <<= 1;
-		i2cSCLOutput(1);
-		i2cDelay();
-		data |= i2cSDAInput();
-		i2cSCLOutput(0);
-		i2cDelay();
-	}
-	i2cOutputMode();
-	return data;
+    uint8_t i;
+    uint8_t data = 0;
+    i2cInputMode();
+    for (i = 0; i < 8; i++)
+    {
+        data <<= 1;
+        i2cSCLOutput(1);
+        i2cDelay();
+        data |= i2cSDAInput();
+        i2cSCLOutput(0);
+        i2cDelay();
+    }
+    i2cOutputMode();
+    return data;
 }

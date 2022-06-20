@@ -8,7 +8,7 @@
  */
 void buzzInit(void)
 {
-    GPIO_InitTypeDef buzzStruct;
+    GPIO_InitTypeDef initStruct_gpio;
 
     /* 设置时钟 */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE); // 使能GPIOB时钟
@@ -16,10 +16,10 @@ void buzzInit(void)
     GPIO_PinRemapConfig(GPIO_Remap_SWJ_NoJTRST, ENABLE);  // 关闭JTAG的TRST引脚功能
 
     /* 设置引脚 */
-    buzzStruct.GPIO_Pin = GPIO_Pin_4;         // 引脚号
-    buzzStruct.GPIO_Speed = GPIO_Speed_50MHz; // 引脚速度
-    buzzStruct.GPIO_Mode = GPIO_Mode_Out_PP;  // 引脚功能
-    GPIO_Init(GPIOB, &buzzStruct);            // 设置引脚
+    initStruct_gpio.GPIO_Pin = GPIO_Pin_4;         // 设置引脚号
+    initStruct_gpio.GPIO_Speed = GPIO_Speed_50MHz; // 设置引脚速度
+    initStruct_gpio.GPIO_Mode = GPIO_Mode_Out_PP;  // 设置引脚为普通推挽输出
+    GPIO_Init(GPIOB, &initStruct_gpio);            // 配置引脚
 }
 /**
  * @brief 切换蜂鸣器状态
@@ -28,5 +28,5 @@ void buzzInit(void)
  */
 void buzz(uint8_t status)
 {
-    GPIO_WriteBit(GPIOB, GPIO_Pin_4, (BitAction)(!status));
+    GPIO_WriteBit(GPIOB, GPIO_Pin_4, (BitAction)(!status)); // 切换
 }
