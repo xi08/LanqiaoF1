@@ -12,8 +12,6 @@ void buzzInit(void)
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
     GPIO_PinRemapConfig(GPIO_Remap_SWJ_NoJTRST, ENABLE);
-    GPIO_PinRemapConfig(GPIO_Remap_SWJ_Disable, ENABLE);
-    GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
     buzzStruct.GPIO_Pin = GPIO_Pin_4;
     buzzStruct.GPIO_Speed = GPIO_Speed_50MHz;
     buzzStruct.GPIO_Mode = GPIO_Mode_Out_PP;
