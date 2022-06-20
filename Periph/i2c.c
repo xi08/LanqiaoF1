@@ -20,7 +20,7 @@ void i2cInit(void)
     /* 设置引脚 */
     initStruct_gpio.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7; // 设置引脚号
     initStruct_gpio.GPIO_Speed = GPIO_Speed_10MHz;      // 设置引脚速度
-    initStruct_gpio.GPIO_Mode = GPIO_Mode_Out_PP;       // 设置引脚为普通推挽输出
+    initStruct_gpio.GPIO_Mode = GPIO_Mode_Out_OD;       // 设置引脚为普通开漏输出
     GPIO_Init(GPIOB, &initStruct_gpio);                 // 配置引脚
 }
 
@@ -35,7 +35,7 @@ void i2cOutputMode(void)
     /* 设置引脚 */
     i2cGPIO.GPIO_Pin = GPIO_Pin_7;         // 设置引脚号
     i2cGPIO.GPIO_Speed = GPIO_Speed_10MHz; // 设置引脚速度
-    i2cGPIO.GPIO_Mode = GPIO_Mode_Out_PP;  // 设置引脚为普通推挽输出
+    i2cGPIO.GPIO_Mode = GPIO_Mode_Out_OD;  // 设置引脚为普通推挽输出
     GPIO_Init(GPIOB, &i2cGPIO);            // 配置引脚
 }
 
@@ -48,9 +48,9 @@ void i2cInputMode(void)
     GPIO_InitTypeDef i2cGPIO;
 
     /* 设置引脚 */
-    i2cGPIO.GPIO_Pin = GPIO_Pin_7;     // 设置引脚号
-    i2cGPIO.GPIO_Mode = GPIO_Mode_IPD; // 设置引脚为下拉输入
-    GPIO_Init(GPIOB, &i2cGPIO);        // 配置引脚
+    i2cGPIO.GPIO_Pin = GPIO_Pin_7;             // 设置引脚号
+    i2cGPIO.GPIO_Mode = GPIO_Mode_IN_FLOATING; // 设置引脚为浮空输入
+    GPIO_Init(GPIOB, &i2cGPIO);                // 配置引脚
 }
 
 /**
@@ -60,13 +60,16 @@ void i2cInputMode(void)
 void i2cReset(void)
 {
     uint8_t i;
+    
+    /* 连续发送9个时钟 */
+    i2cInputMode();
     for (i = 0; i < 9; i++)
     {
         i2cSCLOutput(1);
         i2cDelay();
         i2cSCLOutput(0);
         i2cDelay();
-        if (!i2cSDAInput())
+        if (i2cSDAInput())
             return;
     }
 }
