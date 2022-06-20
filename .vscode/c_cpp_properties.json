@@ -1,0 +1,23 @@
+{
+    "configurations": [
+        {
+            "name": "CT117E",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "C:\\Keil_v5\\ARM\\ARM_Compiler_5.06u7\\include\\**"
+            ],
+            "defines": [
+                "STM32F10X_MD",
+                "USE_STDPERIPH_DRIVER"
+            ],
+            "compilerPath": "",
+            "cStandard": "c89",
+            "cppStandard": "c++98",
+            "intelliSenseMode": "gcc-arm",
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true
+            }
+        }
+    ],
+    "version": 4
+}
