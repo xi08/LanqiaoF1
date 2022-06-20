@@ -28,6 +28,7 @@ void ledDisp(uint8_t status)
 {
     /* 设置引脚电平 */
     GPIO_Write(GPIOC, ~status << 8);
+    
     /* 刷新引脚 */
     GPIO_SetBits(GPIOD, GPIO_Pin_2);
     GPIO_ResetBits(GPIOD, GPIO_Pin_2);

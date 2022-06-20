@@ -39,11 +39,13 @@ void keyInit(void)
 void updateKey(void)
 {
     uint8_t i = keyNum, keyInfo = 0xff;
+
     /* 获取按键信息 */
     keyInfo ^= (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0) << 0);
     keyInfo ^= (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_8) << 1);
     keyInfo ^= (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_1) << 2);
     keyInfo ^= (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_2) << 3);
+    
     /* 按键信息转换 */
     while (i--)
     {

@@ -74,8 +74,8 @@ void uart2Init(uint32_t baudRate)
     NVIC_InitTypeDef initStruct_NVIC;
 
     /* 时钟设置 */
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE); // 使能GPIOA时钟
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE); // 使能USART2时钟
 
     /* GPIO设置 */
     initStruct_GPIO.GPIO_Speed = GPIO_Speed_10MHz;     // 接口速率
@@ -112,10 +112,12 @@ void uart2Init(uint32_t baudRate)
 void USART1_IRQHandler(void)
 {
     uint8_t ch;
-    if (USART_GetITStatus(USART1, USART_IT_RXNE))
+    if (USART_GetITStatus(USART1, USART_IT_RXNE)) // 检测到USART1接收非空
     {
-        ch = USART_ReceiveData(USART1);
-        if (ch == (uint8_t)uartStopSymbol)
+        ch = USART_ReceiveData(USART1); // 暂存USART1接收到的数据
+
+        /* 发送结束检测 */
+        if (ch == (uint8_t)uartStopSymbol) 
         {
             uartRxBuffer[0][uartRxBufferIdx[0]] = '\0';
             uartRxBufferIdx[0] = 0;
@@ -134,13 +136,15 @@ void USART1_IRQHandler(void)
 void USART2_IRQHandler(void)
 {
     uint8_t ch;
-    if (USART_GetITStatus(USART2, USART_IT_RXNE))
+    if (USART_GetITStatus(USART2, USART_IT_RXNE)) // 检测到USART2接收非空
     {
-        ch = USART_ReceiveData(USART2);
+        ch = USART_ReceiveData(USART2); // 暂存USART2接收到的数据
+
+        /* 发送结束检测 */
         if (ch == (uint8_t)uartStopSymbol)
         {
-            uartRxBuffer[1][uartRxBufferIdx[1]] = '\0';
-            uartRxBufferIdx[1] = 0;
+            uartRxBuffer[1][uartRxBufferIdx[1]] = '\0'; // 写入字符串结束位
+            uartRxBufferIdx[1] = 0; // 清空
             uartRxBufferDirtyFlag |= (1<<1);
         }
         else
