@@ -4,9 +4,12 @@
             "name": "CT117E",
             "includePath": [
                 "${workspaceFolder}/**",
-                "C:\\Keil_v5\\ARM\\ARM_Compiler_5.06u7\\include\\**"
+                "C:\\Keil_v5\\ARM\\ARMCC\\include\\**"
             ],
             "defines": [
+                "__UVISION_VERSION=\"537\"",
+                "__CC_ARM",
+                "__ARMCC_VERSION=5060960",
                 "STM32F10X_MD",
                 "USE_STDPERIPH_DRIVER"
             ],

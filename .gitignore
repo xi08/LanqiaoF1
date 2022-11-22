@@ -7,11 +7,6 @@
 *uvgui*
 *uvproj.bak
 
-# Listing, Object, and Debug folder
-/Listings
-/Objects
-/DebugConfig
-
 # Legacy code file
 *_legacy*
 
@@ -23,7 +18,6 @@
 *.elf
 *.hex
 *.h86
-*.lib
 *.obj
 *.o
 *.sbr
@@ -38,6 +32,7 @@
 
 # Debugger files
 *.ini
+*.dbgconf
 
 # Other files
 *.build_log.htm
@@ -53,6 +48,7 @@
 *.sct
 *.sfd
 *.sfr
+*.scvd
 
 # Misc
 *.tra
