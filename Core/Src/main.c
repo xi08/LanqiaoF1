@@ -42,6 +42,7 @@ typedef enum
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -59,6 +60,10 @@ uint32_t keyUpdate_TS[keyNum];
 keyState_enum keyState[keyNum];
 
 uint8_t ledBuffer = 0;
+
+char uartRxBuffer[uartBufferSize];
+uint8_t uartRxBufferIdx = 0;
+uint8_t uartRxOKFlag = 0;
 
 /* USER CODE END PV */
 
@@ -175,13 +180,12 @@ void SystemClock_Config(void)
 
 void msDelay(uint32_t t)
 {
-    uint32_t msDelay_TS = sysTime, delayTime = t;
-    if (delayTime < 0xffffffff)
-        delayTime++;
-    while (sysTime - msDelay_TS < delayTime) /* wait */
+    uint32_t msDelay_TS = sysTime, delayT = t;
+    if (delayT < 0xffffffff)
+        delayT++;
+    while (sysTime - msDelay_TS < delayT) /* wait */
         ;
 }
-
 
 void keyUpdate(void)
 {
@@ -313,6 +317,27 @@ void ledUpdate(void)
     LL_GPIO_WriteOutputPort(LD1_GPIO_Port, ~ledBuffer << 8);
     LL_GPIO_SetOutputPin(LE_GPIO_Port, LE_Pin);
     LL_GPIO_ResetOutputPin(LE_GPIO_Port, LE_Pin);
+}
+
+void uart_ReceiveIRQ(void)
+{
+    uint8_t ch = LL_USART_ReceiveData8(USART1);
+
+    if (ch == (uint8_t)('\r'))
+    {
+        uartRxBufferIdx = 0;
+        uartRxOKFlag = 1;
+    }
+    else
+        uartRxBuffer[uartRxBufferIdx++] = ch;
+}
+
+int fputc(int ch, FILE *f)
+{
+    while (!LL_USART_IsActiveFlag_TXE(USART1))
+        ;
+    LL_USART_TransmitData8(USART1, (uint8_t)ch);
+    return ch;
 }
 
 /* USER CODE END 4 */

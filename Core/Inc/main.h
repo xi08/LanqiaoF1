@@ -68,7 +68,7 @@ extern volatile uint32_t sysTime;
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-
+void uart_ReceiveIRQ(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -128,7 +128,7 @@ void Error_Handler(void);
 #define keyNum 4 /* number of keys */
 #define keyLongPressTime 800 /* time of long press in ms */
 #define keyShortPressTime 50 /* time of short press in ms */
-
+#define uartBufferSize 128 /* size of uart buffer */
 
 /* USER CODE END Private defines */
 
