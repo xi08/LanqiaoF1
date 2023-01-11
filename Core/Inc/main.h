@@ -125,6 +125,11 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN Private defines */
 
+#define keyNum 4 /* number of keys */
+#define keyLongPressTime 800 /* time of long press in ms */
+#define keyShortPressTime 50 /* time of short press in ms */
+
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

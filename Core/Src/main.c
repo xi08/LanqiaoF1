@@ -30,6 +30,14 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
+typedef enum
+{
+    S0, /* Empty/Initial */
+    S1, /* Short */
+    S2, /* Pressed */
+    S3, /* Long */
+} keyState_enum;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -44,12 +52,24 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+
 volatile uint32_t sysTime = 0;
+
+uint32_t keyUpdate_TS[keyNum];
+keyState_enum keyState[keyNum];
+
+uint8_t ledBuffer = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+
+void keyUpdate(void);
+void keyResp(void);
+void ledUpdate(void);
+void msDelay(uint32_t t);
 
 /* USER CODE END PFP */
 
@@ -97,13 +117,16 @@ int main(void)
     MX_USART1_UART_Init();
     MX_ADC1_Init();
     /* USER CODE BEGIN 2 */
-   
+
     /* USER CODE END 2 */
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
     while (1)
     {
+        keyUpdate();
+        keyResp();
+        ledUpdate();
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
@@ -149,6 +172,148 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void msDelay(uint32_t t)
+{
+    uint32_t msDelay_TS = sysTime, delayTime = t;
+    if (delayTime < 0xffffffff)
+        delayTime++;
+    while (sysTime - msDelay_TS < delayTime) /* wait */
+        ;
+}
+
+
+void keyUpdate(void)
+{
+    uint8_t i = keyNum, keyInfo = 0xff;
+
+    keyInfo ^= ((LL_GPIO_IsInputPinSet(B1_GPIO_Port, B1_Pin)) << 0);
+    keyInfo ^= ((LL_GPIO_IsInputPinSet(B2_GPIO_Port, B2_Pin)) << 1);
+    keyInfo ^= ((LL_GPIO_IsInputPinSet(B3_GPIO_Port, B3_Pin)) << 2);
+    keyInfo ^= ((LL_GPIO_IsInputPinSet(B4_GPIO_Port, B4_Pin)) << 3);
+
+    while (i--)
+    {
+        /* Pressed */
+        if ((keyInfo & (1 << i)) == 1)
+        {
+            switch (keyState[i])
+            {
+            case S0:
+                keyState[i] = S2;          // switch state
+                keyUpdate_TS[i] = sysTime; // update timestamp
+                break;
+
+            default:
+                break;
+            }
+        }
+        /* Not Pressed */
+        if ((keyInfo & (1 << i)) == 0)
+        {
+            switch (keyState[i])
+            {
+            case S2:
+                if (sysTime - keyUpdate_TS[i] >= keyLongPressTime) // S3 detection
+                    keyState[i] = S3;
+                else if (sysTime - keyUpdate_TS[i] >= keyShortPressTime) // S1 detection
+                    keyState[i] = S1;
+                else
+                    keyState[i] = S0; // reset state
+                break;
+
+            default:
+                keyState[i] = S0; // reset state
+                break;
+            }
+        }
+    }
+}
+
+void keyResp(void)
+{
+    /* B1 */
+    switch (keyState[0])
+    {
+    case S1: // Short
+
+        ledBuffer <<= 1;
+        if (ledBuffer == 0)
+            ledBuffer = 1;
+
+        keyState[0] = S0; // reset state
+        break;
+
+    case S3: // Long
+
+        keyState[0] = S0; // reset state
+        break;
+
+    default:
+        break;
+    }
+
+    /* B2 */
+    switch (keyState[1])
+    {
+    case S1: // Short
+        ledBuffer >>= 1;
+        if (ledBuffer == 0)
+            ledBuffer = 1;
+
+        keyState[1] = S0; // reset state
+        break;
+
+    case S3: // Long
+
+        keyState[1] = S0; // reset state
+        break;
+
+    default:
+        break;
+    }
+
+    /* B3 */
+    switch (keyState[2])
+    {
+    case S1: // Short
+
+        keyState[2] = S0; // reset state
+        break;
+
+    case S3: // Long
+
+        keyState[2] = S0; // reset state
+        break;
+
+    default:
+        break;
+    }
+
+    /* B4 */
+    switch (keyState[3])
+    {
+    case S1: // Short
+
+        keyState[3] = S0; // reset state
+        break;
+
+    case S3: // Long
+
+        keyState[3] = S0; // reset state
+        break;
+
+    default:
+        break;
+    }
+}
+
+void ledUpdate(void)
+{
+    LL_GPIO_WriteOutputPort(LD1_GPIO_Port, ~ledBuffer << 8);
+    LL_GPIO_SetOutputPin(LE_GPIO_Port, LE_Pin);
+    LL_GPIO_ResetOutputPin(LE_GPIO_Port, LE_Pin);
+}
 
 /* USER CODE END 4 */
 
