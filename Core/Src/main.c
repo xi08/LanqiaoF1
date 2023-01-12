@@ -1,377 +1,209 @@
-/* USER CODE BEGIN Header */
-/**
- ******************************************************************************
- * @file           : main.c
- * @brief          : Main program body
- ******************************************************************************
- * @attention
- *
- * Copyright (c) 2023 STMicroelectronics.
- * All rights reserved.
- *
- * This software is licensed under terms that can be found in the LICENSE file
- * in the root directory of this software component.
- * If no LICENSE file comes with this software, it is provided AS-IS.
- *
- ******************************************************************************
- */
-/* USER CODE END Header */
-/* Includes ------------------------------------------------------------------*/
-#include "main.h"
-#include "adc.h"
-#include "gpio.h"
-#include "usart.h"
+// code = utf-8
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
+#include "stm32f10x_conf.h"
+
+#include "at24c02.h"
+#include "buzz.h"
+#include "key.h"
+#include "lcd.h"
+#include "led.h"
+#include "r37.h"
+#include "sysTime.h"
+#include "uart.h"
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <math.h>
-/* USER CODE END Includes */
 
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
+// 旋转电位器滤波前缓冲
+uint16_t r37FilterValue, r37FilterMax, r37FilterMin;
+// 旋转电位器转换后当前值
+float r37Val;
 
-typedef enum
+// e2prom镜像
+uint8_t e2promReadBuffer[16][16];
+uint8_t e2promWriteBuffer[16][16];
+
+// 显示缓冲
+uint8_t dispBuffer[21];
+
+// PWM 刷新标记
+uint8_t pwmRefreshFlag; // PA1刷新标记-PA6刷新标记
+
+// PA1_PWM 参数
+uint32_t pa1_freq;
+uint16_t pa1_duty;
+
+// PA6_PWM 参数
+uint32_t pa6_freq;
+uint16_t pa6_duty;
+
+int main()
 {
-    S0, /* Empty/Initial */
-    S1, /* Short */
-    S2, /* Pressed */
-    S3, /* Long */
-} keyState_enum;
+    uint8_t i;
 
-/* USER CODE END PTD */
+    sysTimeInit();       // 初始化硬件延时时钟
+    uart2Init(1152000);  // 初始化USB串口
+    STM3210B_LCD_Init(); // 初始化显示
+    LCD_Clear(White);    // 清屏
+    keyInit();           // 初始化按键
+    ledInit();           // 初始化LED管
+    ledDisp(0x0);        // 清除LED显示
+    r37DmaInit();        // 初始化旋转电位器
+    at24c02_init();      // 初始化E2PROM
+    LCD_DisplayStringLine(Line0, "CT117E V1.1");
+    LCD_DisplayStringLine(Line1, "Compiled in");
+    sprintf((char *)dispBuffer, "%s,%s", __TIME__, __DATE__);
+    LCD_DisplayStringLine(Line2, dispBuffer);
+    printf("%s\n%s:%s\n", "CT117E V1.1", "Compiled in", dispBuffer);
+    delay1ms(1000);
+    LCD_ClearLine(Line1);
+    LCD_ClearLine(Line2);
 
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
-
-/* USER CODE BEGIN PV */
-
-volatile uint32_t sysTime = 0;
-
-uint32_t keyUpdate_TS[keyNum];
-keyState_enum keyState[keyNum];
-
-uint8_t ledBuffer = 0;
-
-char uartRxBuffer[uartBufferSize];
-uint8_t uartRxBufferIdx = 0;
-uint8_t uartRxOKFlag = 0;
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
-/* USER CODE BEGIN PFP */
-
-void keyUpdate(void);
-void keyResp(void);
-void ledUpdate(void);
-void msDelay(uint32_t t);
-
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
-
-/**
- * @brief  The application entry point.
- * @retval int
- */
-int main(void)
-{
-    /* USER CODE BEGIN 1 */
-
-    /* USER CODE END 1 */
-
-    /* MCU Configuration--------------------------------------------------------*/
-
-    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
-    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-
-    /* System interrupt init*/
-    NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_2);
-
-    /** NONJTRST: Full SWJ (JTAG-DP + SW-DP) but without NJTRST
-     */
-    LL_GPIO_AF_Remap_SWJ_NONJTRST();
-
-    /* USER CODE BEGIN Init */
-
-    /* USER CODE END Init */
-
-    /* Configure the system clock */
-    SystemClock_Config();
-
-    /* USER CODE BEGIN SysInit */
-    LL_SYSTICK_EnableIT();
-    /* USER CODE END SysInit */
-
-    /* Initialize all configured peripherals */
-    MX_GPIO_Init();
-    MX_USART1_UART_Init();
-    MX_ADC1_Init();
-    /* USER CODE BEGIN 2 */
-
-    /* USER CODE END 2 */
-
-    /* Infinite loop */
-    /* USER CODE BEGIN WHILE */
     while (1)
     {
-        keyUpdate();
-        keyResp();
-        ledUpdate();
-        /* USER CODE END WHILE */
-
-        /* USER CODE BEGIN 3 */
-    }
-    /* USER CODE END 3 */
-}
-
-/**
- * @brief System Clock Configuration
- * @retval None
- */
-void SystemClock_Config(void)
-{
-    LL_FLASH_SetLatency(LL_FLASH_LATENCY_2);
-    while (LL_FLASH_GetLatency() != LL_FLASH_LATENCY_2)
-    {
-    }
-    LL_RCC_HSE_Enable();
-
-    /* Wait till HSE is ready */
-    while (LL_RCC_HSE_IsReady() != 1)
-    {
-    }
-    LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSE_DIV_1, LL_RCC_PLL_MUL_9);
-    LL_RCC_PLL_Enable();
-
-    /* Wait till PLL is ready */
-    while (LL_RCC_PLL_IsReady() != 1)
-    {
-    }
-    LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
-    LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_2);
-    LL_RCC_SetAPB2Prescaler(LL_RCC_APB2_DIV_1);
-    LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL);
-
-    /* Wait till System clock is ready */
-    while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL)
-    {
-    }
-    LL_Init1msTick(72000000);
-    LL_SetSystemCoreClock(72000000);
-    LL_RCC_SetADCClockSource(LL_RCC_ADC_CLKSRC_PCLK2_DIV_6);
-}
-
-/* USER CODE BEGIN 4 */
-
-void msDelay(uint32_t t)
-{
-    uint32_t msDelay_TS = sysTime, delayT = t;
-    if (delayT < 0xffffffff)
-        delayT++;
-    while (sysTime - msDelay_TS < delayT) /* wait */
-        ;
-}
-
-void keyUpdate(void)
-{
-    uint8_t i = keyNum, keyInfo = 0xff;
-
-    keyInfo ^= ((LL_GPIO_IsInputPinSet(B1_GPIO_Port, B1_Pin)) << 0);
-    keyInfo ^= ((LL_GPIO_IsInputPinSet(B2_GPIO_Port, B2_Pin)) << 1);
-    keyInfo ^= ((LL_GPIO_IsInputPinSet(B3_GPIO_Port, B3_Pin)) << 2);
-    keyInfo ^= ((LL_GPIO_IsInputPinSet(B4_GPIO_Port, B4_Pin)) << 3);
-
-    while (i--)
-    {
-        /* Pressed */
-        if ((keyInfo & (1 << i)) == 1)
+        // 1s定时执行
+        if (timeFlag & tF_1000ms)
         {
-            switch (keyState[i])
-            {
-            case S0:
-                keyState[i] = S2;          // switch state
-                keyUpdate_TS[i] = sysTime; // update timestamp
-                break;
-
-            default:
-                break;
-            }
+            timeFlag &= ~tF_1000ms;
+            // 输出r37
+            printf("r37=%3.2fV\n", r37Val * 3.3);
+            sprintf((char *)dispBuffer, "r37=%.2f", r37Val * 3.3);
+            LCD_ClearLine(Line1);
+            LCD_DisplayStringLine(Line1, dispBuffer);
         }
-        /* Not Pressed */
-        if ((keyInfo & (1 << i)) == 0)
+
+        // 按键
+        updateKey();
+        keyProg();
+
+        // 串口2接收
+        if (uartRxBufferDirtyFlag & (1 << 1))
         {
-            switch (keyState[i])
-            {
-            case S2:
-                if (sysTime - keyUpdate_TS[i] >= keyLongPressTime) // S3 detection
-                    keyState[i] = S3;
-                else if (sysTime - keyUpdate_TS[i] >= keyShortPressTime) // S1 detection
-                    keyState[i] = S1;
-                else
-                    keyState[i] = S0; // reset state
-                break;
-
-            default:
-                keyState[i] = S0; // reset state
-                break;
-            }
+            uartRxBufferDirtyFlag &= ~(1 << 1);
+            sprintf((char *)dispBuffer, "UART2:%s", uartRxBuffer[1]);
+            LCD_ClearLine(Line2);
+            LCD_DisplayStringLine(Line2, dispBuffer);
         }
-    }
+
+        //  旋转电位器转换
+        if (DMA_GetFlagStatus(DMA1_FLAG_TC1))
+        {
+            // 清空滤波缓存区
+            r37FilterMax = 0;
+            r37FilterMin = 0xffff;
+            r37FilterValue = 0;
+            // 滤波
+            for (i = 0; i < 10; i++)
+            {
+                r37FilterValue += r37_ADCVal[i];
+                if (r37_ADCVal[i] > r37FilterMax)
+                    r37FilterMax = r37_ADCVal[i];
+                if (r37_ADCVal[i] < r37FilterMin)
+                    r37FilterMin = r37_ADCVal[i];
+            }
+            r37FilterValue -= r37FilterMax;
+            r37FilterValue -= r37FilterMin;
+            r37FilterValue >>= 3;
+            // 转换
+            r37Val = (float)r37FilterValue / 4095;
+        }
+        }
 }
-
-void keyResp(void)
-{
-    /* B1 */
-    switch (keyState[0])
-    {
-    case S1: // Short
-
-        ledBuffer <<= 1;
-        if (ledBuffer == 0)
-            ledBuffer = 1;
-
-        keyState[0] = S0; // reset state
-        break;
-
-    case S3: // Long
-
-        keyState[0] = S0; // reset state
-        break;
-
-    default:
-        break;
-    }
-
-    /* B2 */
-    switch (keyState[1])
-    {
-    case S1: // Short
-        ledBuffer >>= 1;
-        if (ledBuffer == 0)
-            ledBuffer = 1;
-
-        keyState[1] = S0; // reset state
-        break;
-
-    case S3: // Long
-
-        keyState[1] = S0; // reset state
-        break;
-
-    default:
-        break;
-    }
-
-    /* B3 */
-    switch (keyState[2])
-    {
-    case S1: // Short
-
-        keyState[2] = S0; // reset state
-        break;
-
-    case S3: // Long
-
-        keyState[2] = S0; // reset state
-        break;
-
-    default:
-        break;
-    }
-
-    /* B4 */
-    switch (keyState[3])
-    {
-    case S1: // Short
-
-        keyState[3] = S0; // reset state
-        break;
-
-    case S3: // Long
-
-        keyState[3] = S0; // reset state
-        break;
-
-    default:
-        break;
-    }
-}
-
-void ledUpdate(void)
-{
-    LL_GPIO_WriteOutputPort(LD1_GPIO_Port, ~ledBuffer << 8);
-    LL_GPIO_SetOutputPin(LE_GPIO_Port, LE_Pin);
-    LL_GPIO_ResetOutputPin(LE_GPIO_Port, LE_Pin);
-}
-
-void uart_ReceiveIRQ(void)
-{
-    uint8_t ch = LL_USART_ReceiveData8(USART1);
-
-    if (ch == (uint8_t)('\r'))
-    {
-        uartRxBufferIdx = 0;
-        uartRxOKFlag = 1;
-    }
-    else
-        uartRxBuffer[uartRxBufferIdx++] = ch;
-}
-
-int fputc(int ch, FILE *f)
-{
-    while (!LL_USART_IsActiveFlag_TXE(USART1))
-        ;
-    LL_USART_TransmitData8(USART1, (uint8_t)ch);
-    return ch;
-}
-
-/* USER CODE END 4 */
 
 /**
- * @brief  This function is executed in case of error occurrence.
- * @retval None
+ * @brief 按键响应
+ *
  */
-void Error_Handler(void)
+void keyProg(void)
 {
-    /* USER CODE BEGIN Error_Handler_Debug */
-    /* User can add his own implementation to report the HAL error return state */
-    __disable_irq();
-    while (1)
+    switch (keyState[0]) // KEY0, B1
     {
-    }
-    /* USER CODE END Error_Handler_Debug */
-}
+    case S1: // 短按
+        LCD_ClearLine(Line2);
+        LCD_SetTextColor(0xbc40);
+        LCD_DisplayStringLine(Line2, "B1 Short");
+        LCD_SetTextColor(Black);
+        keyState[0] = S0;
+        break;
 
-#ifdef USE_FULL_ASSERT
-/**
- * @brief  Reports the name of the source file and the source line number
- *         where the assert_param error has occurred.
- * @param  file: pointer to the source file name
- * @param  line: assert_param error line source number
- * @retval None
- */
-void assert_failed(uint8_t *file, uint32_t line)
-{
-    /* USER CODE BEGIN 6 */
-    /* User can add his own implementation to report the file name and line number,
-       ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-    /* USER CODE END 6 */
+    case S3: // 长按
+        LCD_ClearLine(Line2);
+        LCD_SetTextColor(Blue);
+        LCD_DisplayStringLine(Line2, "B1 Long");
+        LCD_SetTextColor(Black);
+        keyState[0] = S0;
+        break;
+
+    default:
+        break;
+    }
+
+    switch (keyState[1]) // KEY1, B2
+    {
+    case S1: // 短按
+
+        LCD_ClearLine(Line2);
+        LCD_SetTextColor(0xbc40);
+        LCD_DisplayStringLine(Line2, "B2 Short");
+        LCD_SetTextColor(Black);
+        keyState[1] = S0;
+        break;
+
+    case S3: // 长按
+
+        LCD_ClearLine(Line2);
+        LCD_SetTextColor(Blue);
+        LCD_DisplayStringLine(Line2, "B2 Long");
+        LCD_SetTextColor(Black);
+        keyState[1] = S0;
+        break;
+
+    default:
+        break;
+    }
+
+    switch (keyState[2]) // KEY2, B3
+    {
+    case S1: // 短按
+        LCD_ClearLine(Line2);
+        LCD_SetTextColor(0xbc40);
+        LCD_DisplayStringLine(Line2, "B3 Short");
+        LCD_SetTextColor(Black);
+        keyState[2] = S0;
+        break;
+
+    case S3: // 长按
+        LCD_ClearLine(Line2);
+        LCD_SetTextColor(Blue);
+        LCD_DisplayStringLine(Line2, "B3 Long");
+        LCD_SetTextColor(Black);
+        keyState[2] = S0;
+        break;
+
+    default:
+        break;
+    }
+
+    switch (keyState[3]) // KEY3, B4
+    {
+    case S1: // 短按
+        LCD_ClearLine(Line2);
+        LCD_SetTextColor(0xbc40);
+        LCD_DisplayStringLine(Line2, "B4 Short");
+        LCD_SetTextColor(Black);
+        keyState[3] = S0;
+        break;
+
+    case S3: // 长按
+        LCD_ClearLine(Line2);
+        LCD_SetTextColor(Blue);
+        LCD_DisplayStringLine(Line2, "B4 Long");
+        LCD_SetTextColor(Black);
+        keyState[3] = S0;
+        break;
+
+    default:
+        break;
+    }
 }
-#endif /* USE_FULL_ASSERT */
